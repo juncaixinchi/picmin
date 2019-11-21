@@ -30,14 +30,17 @@ const App: React.FC = () => {
 
     reader.onload = (e: any) => {
       const data: ArrayBuffer = e.target.result;
+      const img1Data =  Buffer.from(data).toString('base64');
+      /**  use `browserify` to convert `src/app.worker.js` to `public/worker.bundle.js` */
       const worker = new Worker('worker.bundle.js');
 
       // send Transferable Objects
       worker.postMessage({ quality, buffer: data }, [data]);
 
       const now = new Date().getTime()
+
+      // receive data
       worker.onmessage = (ev) => {
-        const img1Data = Buffer.from(data).toString('base64');
         const img2Data = Buffer.from(ev.data).toString('base64');
         let img = document.getElementById("preview") as HTMLImageElement;
         let img2 = document.getElementById("preview2") as HTMLImageElement;
@@ -45,7 +48,12 @@ const App: React.FC = () => {
         img2.src = `data:image/jpeg;base64,${img2Data}`;
         img.style.opacity = '1';
         img2.style.opacity = '1';
-        console.log(img.src.length, img2.src.length, `${(100 - img1Data.length / img2Data.length * 100).toFixed(1)}%`)
+        console.log(
+          img.src.length, img2.src.length,
+          `${(100 - img1Data.length / img2Data.length * 100).toFixed(1)}%`,
+          new Date().getTime() - now,
+          'ms'
+        )
 
         // close worker
         worker.terminate();
